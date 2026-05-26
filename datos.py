@@ -5,11 +5,11 @@ def actualización_medicamento():
     resultado = {}
     with open('albergues.csv','r') as archivo:
         lineas = archivo.readlines()
-    for i in lineas[1:]:
-        datos = i.strip().replace('"',"").split(",")
-        Med_modificacion = int(datos[4]) * 0.1 - int(datos[6])
+    for i in lineas[1:]: # y esto es necesario para que ignore la linea de los nombres de las cosas
+        datos = i.strip().replace('"',"").split(",") # aqui le quitamos todo lo molesto a la lista
+        Med_modificacion = int(datos[4]) * 0.1 - int(datos[6]) #aqui le restamos los medicamentos consumidos segun la cantidad depersonas
         datos[6] = Med_modificacion
-        nombre = datos[1]
+        nombre = datos[1]# y de aqui para abajo es arreglar los datos para que puedan encajar en la función que se llama alfinal
         datos[0] = int(datos[0])
         datos[1] = float(datos[2])
         datos[2] = float(datos[3])
