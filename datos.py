@@ -1,6 +1,28 @@
 #Constantes Archivos
 ARCHIVO_ALBERGUES = "albergues.csv"
 ARCHIVO_DIA = "dia.txt"
+def actualización_medicamento():
+    resultado = {}
+    with open('albergues.csv','r') as archivo:
+        lineas = archivo.readlines()
+    for i in lineas[1:]:
+        datos = i.strip().replace('"',"").split(",")
+        Med_modificacion = int(datos[4]) * 0.1 - int(datos[6])
+        datos[6] = Med_modificacion
+        nombre = datos[1]
+        datos[0] = int(datos[0])
+        datos[1] = float(datos[2])
+        datos[2] = float(datos[3])
+        datos[3] = int(datos[4])
+        datos[4] = int(datos[5])
+        datos[5] = int(datos[6])
+        datos[6] = int(datos[7])
+        datos.pop()
+        resultado[nombre] = datos
+    escribe_datos_en_archivo(resultado)
+
+
+
 
 def leer_dia_actual() -> int:
     try:
