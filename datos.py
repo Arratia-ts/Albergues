@@ -135,7 +135,7 @@ def test():
 ARCHIVO_ENVIOS = "envios.csv"
 #RF5 Sección dias
 
-def lee_datos_de_archivo_envios() -> dict[str, list[int, float, float, int, int, int, int]]:
+def lee_datos_de_archivo_envios() -> dict[str, list[int, int, str, float]]:
     dicc_envios = {}
     try:
         with open(ARCHIVO_ENVIOS, 'r', encoding='utf-8') as arch:
