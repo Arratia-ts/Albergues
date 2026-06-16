@@ -1,71 +1,71 @@
-#Constantes Archivos
+"""
+Esta es nuestra capa de datos gestiona e escribe en caso de que no existan
+los csv de envios y de albergues a la vez que modifica el archivo de texto de dias para 
+el transcurso de los dias en nuestra plataforma
+"""
+
+# Estan serán nuestras constantes globales
+
 ARCHIVO_ALBERGUES = "albergues.csv"
 ARCHIVO_DIA = "dia.txt"
-def actualización_medicamento():
-    resultado = {}
-    with open('albergues.csv','r') as archivo:
-        lineas = archivo.readlines()
-    for i in lineas[1:]: # y esto es necesario para que ignore la linea de los nombres de las cosas
-        datos = i.strip().replace('"',"").split(",") # aqui le quitamos todo lo molesto a la lista
-        Med_modificacion = int(datos[4]) * 0.1 - int(datos[6]) #aqui le restamos los medicamentos consumidos segun la cantidad depersonas
-        datos[6] = Med_modificacion
-        nombre = datos[1]# y de aqui para abajo es arreglar los datos para que puedan encajar en la función que se llama alfinal
-        datos[0] = int(datos[0])
-        datos[1] = float(datos[2])
-        datos[2] = float(datos[3])
-        datos[3] = int(datos[4])
-        datos[4] = int(datos[5])
-        datos[5] = int(datos[6])
-        datos[6] = int(datos[7])
-        datos.pop()
-        resultado[nombre] = datos
-    escribe_datos_en_archivo(resultado)
-
-
+ARCHIVO_ENVIOS = "envios.csv"
 
 
 def leer_dia_actual() -> int:
+    """
+    Esta funcion abre el archivo dia.txt en modo lectura para leer el numero
+    quitando cualquier espacio o salto de linea y lo convierte en entero
+    """
     try:
-        # Intentamos abrir el archivo exclusivamente para LEER ('r') el día actual
         with open(ARCHIVO_DIA, 'r', encoding='utf-8') as archivo:
             contenido = archivo.read().strip()
-            return int(contenido)  
-            
-    except FileNotFoundError:
-
-        print(f"El archivo {ARCHIVO_DIA} no existe. Inicializando en el Día 1.")
-        
-        # Creamos el archivo nuevo en modo de escritura ('w') e inyectamos el valor "1"
+            return int(contenido)    
+    except FileNotFoundError: #En caso de que el archivo no exista lo creamos en modo escritura asi evitamos errores cuando no este el archivo
         with open(ARCHIVO_DIA, 'w', encoding='utf-8') as archivo:
             archivo.write("1")
+        return 1 # devuelve y escribe uno como el dia 1
+
+def conteo_dias() -> int:
+    """
+    Con esta funcion hacemos que lea el dia actual del dia.txt 
+    tambien tiene su exepción si el archivo no llegase a existir en el momento de contar
+    simplemente empieza desde el dia 1 sin sumar nada
+    """
+    try:
+   
+        with open(ARCHIVO_DIA, 'r', encoding='utf-8') as archivo:
+            dia_actual = int(archivo.read().strip())
             
+    
+        nuevo_dia = dia_actual + 1
+        with open(ARCHIVO_DIA, 'w', encoding='utf-8') as archivo:
+            archivo.write(str(nuevo_dia))
+            
+        print(f"Conteo exitoso. El sistema avanzó al Día: {nuevo_dia}")
+        return nuevo_dia
+        
+    except FileNotFoundError: # Esto es lo que permite que no entre en error y empieze contando desde el dia 1
+ 
+        print(f"Primer inicio detectado. Inicializando sistema en el Día 1.")  # con este print podemos ver como va sumando los dias
+        with open(ARCHIVO_DIA, 'w', encoding='utf-8') as archivo:
+            archivo.write("1")
         return 1
 
-
-# ------Seccion RF2 para leer archivos--------#
-def lee_datos_de_archivo() -> dict[str, list[int, float, float, int, int, int, int]]:
+def lee_datos_de_archivo() -> dict[str, list]:
     """
-    Lee albergues.csv y carga los datos en memoria en un diccionario (RF2)[cite: 48].
-    Clave: nombre del albergue (str) [cite: 32, 76]
-    Valor: [dia_crea, latitud, longitud, cant_pers, cap_pers, cant_med, cap_med] [cite: 32, 77]
+    Con esta funcion lee y guarda en la base de datos principal de los refugios
     """
-    dicc_albergues = {}
-    try:
-        with open(ARCHIVO_ALBERGUES, 'r', encoding='utf-8') as arch:
-            lineas = arch.readlines()
-            
+    dicc_albergues = {} # creamos un diccionario vacio que iremos llenando con nuestros datos
+    try: # en que caso de que nuestro archivo no existiese usamos una exepcion para que no se nos caiga el programa
+        with open(ARCHIVO_ALBERGUES, 'r', encoding='utf-8') as arch: # abre el archivo que es nuestro csv
+            lineas = arch.readlines() #devuelve una lista de string que seran cada elemento que corresponde a nuestros renglones del csv
             if not lineas:
                 return dicc_albergues
-                
-            # Omitimos la primera línea de encabezado (dia_crea,nombre,...) 
             for linea in lineas[1:]:
                 linea = linea.strip()
                 if not linea:
                     continue
-                
                 campos = linea.split(',') 
-                
-                # Limpieza de comillas dobles y conversión de tipos
                 dia_crea = int(campos[0].strip('"'))
                 nombre = campos[1].strip('"')
                 latitud = float(campos[2].strip('"'))
@@ -73,69 +73,32 @@ def lee_datos_de_archivo() -> dict[str, list[int, float, float, int, int, int, i
                 cant_pers = int(campos[4].strip('"'))
                 cap_pers = int(campos[5].strip('"'))
                 cant_med = int(campos[6].strip('"'))
-                cap_med = int(campos[7].strip('"'))
+                cap_med = int(campos[7].strip('"'))  # Lo que va ir haciendo esto es basicamente estructurar las bases de nuestro csv con esto podemos añadirle mas reglones si lo necesitamos
                 
                 dicc_albergues[nombre] = [
                     dia_crea, latitud, longitud, 
                     cant_pers, cap_pers, cant_med, cap_med
                 ]
     except FileNotFoundError:
-        # Si el archivo no existe, retorna el diccionario vacío de forma controlada [cite: 95]
-        pass
-    
+        pass             # en este caso si no existe el archivo lo crea simplemente
     return dicc_albergues
 
-# ------ 3 Escritura si el csv no existe --------#
-
-def escribe_datos_en_archivo(dicc_albergues: dict[str, list[int, float, float, int, int, int, int]]) -> bool:
-    """
-    Toma el diccionario de albergues y sobrescribe el archivo albergues.csv (RF2)[cite: 96].
-    Garantiza que exista una única línea por cada albergue (evita duplicados)[cite: 40].
-    """
+def escribe_datos_en_archivo(dicc_albergues: dict[str, list]) -> bool:
+    """ Esta funcion toma el diccionario que tenemos en memoria y lo guarda fisicamente en el csv """
     try:
         with open(ARCHIVO_ALBERGUES, 'w', encoding='utf-8') as arch:
-            # Encabezado obligatorio requerido para pruebas externas [cite: 101]
             arch.write("dia_crea,nombre,latitud,longitud,cant_pers,cap_pers,cant_med,cap_med\n")
-            
-            for nombre, datos in dicc_albergues.items():
-                # Formato estricto: todos los campos encerrados en comillas dobles [cite: 43, 106]
+            for nombre, datos in dicc_albergues.items(): #empieza a recorrer el diccionario y saca las parejas de datos del diccionario
                 linea_csv = f'"{datos[0]}","{nombre}","{datos[1]}","{datos[2]}","{datos[3]}","{datos[4]}","{datos[5]}","{datos[6]}"\n'
-                arch.write(linea_csv)
+                arch.write(linea_csv) # aqui se irian escribiendo todos esos datos
         return True
     except Exception:
-        return False
+        return False #en caso de cualquier error para que no se trabe devuelve false
 
-
-# ------4 Bloque de prueba--------#
-def test():
-    print("Test capa de datos")
-    
-    # 1. Probar lectura/creación del día
-    dia = leer_dia_actual()
-    print(f"Día actual en el sistema: {dia}")
-    
-    # 2. Probar lectura de albergues
-    albergues = lee_datos_de_archivo()
-    print("Albergues cargados originalmente:", albergues)
-    
-    # 3. Simulamos añadir un registro tal como vendría de la lógica
-    albergues["Paillaco"] = [dia, -42.0667, -72.8786, 90, 125, 90, 300] 
-
-    albergues["Niebla"] = [dia , -40.0667, -72.8786, 90 , 125, 80 ,300]
-    
-    albergues["Rancagua"] = [dia , -40.0667, -72.8786, 90 , 125, 80 ,300]
-    
-    # 4. Guardar cambios en el archivo plano
-    exito = escribe_datos_en_archivo(albergues)
-    print(f"¿Se guardaron los datos en albergues.csv?: {exito}")
-
-
-
-#Constantes Archivos
-ARCHIVO_ENVIOS = "envios.csv"
-#RF5 Sección dias
-
-def lee_datos_de_archivo_envios() -> dict[str, list[int, int, str, float]]:
+def lee_datos_de_archivo_envios() -> dict[int, list]:
+    """
+    Con esto vamos a leer los archibos de envios basicamente lo mismo que hicimos en el anterior pero con los envios
+    """
     dicc_envios = {}
     try:
         with open(ARCHIVO_ENVIOS, 'r', encoding='utf-8') as arch:
@@ -143,8 +106,7 @@ def lee_datos_de_archivo_envios() -> dict[str, list[int, int, str, float]]:
             
             if not lineas:
                 return dicc_envios
-                
-          
+            
             for linea in lineas[1:]:
                 linea = linea.strip()
                 if not linea:
@@ -152,32 +114,29 @@ def lee_datos_de_archivo_envios() -> dict[str, list[int, int, str, float]]:
                 
                 campos = linea.split(',') 
                 
-    
                 dia_crea = int(campos[0].strip('"'))
                 numero_de_vuelo = int(campos[1].strip('"'))
                 destino = campos[2].strip('"')
                 carga = float(campos[3].strip('"'))
             
-                
-                dicc_envios[destino] = [
+                # Usamos el número de vuelo como clave
+                dicc_envios[numero_de_vuelo] = [
                     dia_crea, numero_de_vuelo, destino, carga
-                ]
+                ] #Esto en si es la misma teoria empezamos a creer un csv pero para los envios con los parametros necesarios
     except FileNotFoundError:
-
         pass
     
     return dicc_envios
 
-
-def escribe_datos_en_archivo_envios(dicc_envios: dict[str, list[int, float, float, int, int, int, int]]) -> bool:
-    
+def escribe_datos_en_archivo_envios(dicc_envios: dict[int, list]) -> bool:
+    """
+    Aqui tomaria el csv de envios , escribe y los guarda basicamente lo mismo que hace el anterior
+    """
     try:
         with open(ARCHIVO_ENVIOS, 'w', encoding='utf-8') as arch:
-            # Encabezado obligatorio requerido para pruebas externas [cite: 101]
             arch.write("dia_crea,numero_de_vuelo,destino,carga\n")
             
-            for destino, datos in dicc_envios.items():
-                # Formato estricto: todos los campos encerrados en comillas dobles [cite: 43, 106]
+            for num_vuelo, datos in dicc_envios.items():
                 linea_csv = f'"{datos[0]}","{datos[1]}","{datos[2]}","{datos[3]}"\n'
                 arch.write(linea_csv)
         return True
@@ -185,28 +144,34 @@ def escribe_datos_en_archivo_envios(dicc_envios: dict[str, list[int, float, floa
         return False
 
 
-def test2():
-    """
-    """
-    print("=== TEST CAPA DE DATOS ===")
-    
-    # 1. Probar lectura/creación del día
+def test() -> None: #esta seccion es paraa simplemente ver como se guardan todo en la memoria
+    print("TEST 1: CAPA DE DATOS (ALBERGUES)")
     dia = leer_dia_actual()
     print(f"Día actual en el sistema: {dia}")
     
-    # 2. Probar lectura de envios
+    albergues = lee_datos_de_archivo()
+    print("Albergues cargados originalmente:", albergues)
+    
+    albergues["Paillaco"] = [dia, -42.0667, -72.8786, 90, 125, 90, 300] 
+    albergues["Niebla"] = [dia, -40.0667, -72.8786, 90, 125, 80, 300]
+    albergues["Rancagua"] = [dia, -40.0667, -72.8786, 90, 125, 80, 300]
+    
+    exito = escribe_datos_en_archivo(albergues)
+    print(f"¿Se guardaron los datos en albergues.csv?: {exito}\n")
+
+def test2() -> None:
+    print("TEST 2: CAPA DE DATOS (ENVIOS)")
+    dia = leer_dia_actual()
     envios = lee_datos_de_archivo_envios()
-    print("Envios cargados originalmente:", envios)
+    print("Envíos cargados originalmente:", envios)
     
-    # 3. Simulamos añadir un registro tal como vendría de la lógica
-    envios["Paillaco"] = [dia, 5, "Paillaco", 150,] 
-    envios["Niebla"] = [dia , 6, "Niebla", 200]
-    envios["Rancagua"] = [dia , 7, "Rancagua", 250]
-    envios["Valdivia"] = [dia , 8, "Valdivia", 300]
+    envios["Paillaco"] = [dia, 5, "Paillaco", 150.0] 
+    envios["Niebla"] = [dia, 6, "Niebla", 200.0]
+    envios["Rancagua"] = [dia, 7, "Rancagua", 250.0]
+    envios["Valdivia"] = [dia, 8, "Valdivia", 300.0]
     
-    # 4. Guardar cambios en el archivo plano
     exito = escribe_datos_en_archivo_envios(envios)
-    print(f"¿Se guardaron los datos en envios.csv?: {exito}")
+    print(f"¿Se guardaron los datos en envios.csv?: {exito}\n")
 
 if __name__ == "__main__":
     test()
