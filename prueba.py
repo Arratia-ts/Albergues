@@ -1,3 +1,8 @@
+error_cant_medicamentos = None
+error_num_envio = None
+error_albergue = None
+error_envio_doble = None
+
 def abrir_ventana_ingreso_envio(): ## Esta Funcion resuelve el reuisito (RF6)
     ventana_ingreso_envio = tk.Toplevel()
     ventana_ingreso_envio.title("Ingreso Envios")
